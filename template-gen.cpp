@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cmath>
 #include <filesystem> 
 #include <fstream> 
 #include "lib/colors.h"

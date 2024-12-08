@@ -1,6 +1,5 @@
 #include <iostream>
 #include <chrono>
-#include <filesystem>
 #include "lib/colors.h"
 #include "lib/mosaic.h"
 
