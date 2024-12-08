@@ -217,7 +217,7 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
     stbi_write_png(imageName.c_str(), width * palletTileWidth, height * palletTileHeight, channels, imageData, width * palletTileWidth * channels);
     
     // Free the image data pointer to avoid memory leak
-    free(imageData);
+    delete [] imageData;
     imageData = nullptr;
 
     return;
