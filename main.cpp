@@ -1,55 +1,12 @@
 #include <iostream>
-#include <fstream> 
 #include <chrono>
 #include <filesystem>
-#include "lib/json.hpp"
 #include "lib/colors.h"
-#include "lib/image.h"
+#include "lib/mosaic.h"
 
 using namespace std;
-using namespace std::filesystem;
-using json = nlohmann::json;
 
 #define debug false
-
-string palletTilesDirPath = "";
-
-vector<palletTile> fetchPalletTiles(string palletFilePath = "pallet.json"){
-    string jsonText;
-
-    try{
-        ifstream json_stream(palletFilePath);
-        while (getline(json_stream, jsonText)) {
-            continue;
-        }
-        json_stream.close(); 
-        json jsonData = json::parse(jsonText);
-
-        palletTilesDirPath = jsonData["dirPath"];
-
-        json jsonData_tiles = jsonData["tiles"];
-        int jsonData_count = 0; 
-        while (jsonData_tiles[jsonData_count] != nullptr) jsonData_count++;
-
-        vector<palletTile> tiles;
-        tiles.resize(jsonData_count);
-        for (int i = 0; i < jsonData_count; i++){
-            tiles[i].name = jsonData_tiles[i]["name"];
-            tiles[i].fileType = jsonData_tiles[i]["fileType"];
-
-            tiles[i].labColor = CIELABColor(
-                jsonData_tiles[i]["CIELABColor"]["L"], 
-                jsonData_tiles[i]["CIELABColor"]["a"],
-                jsonData_tiles[i]["CIELABColor"]["b"]
-            );
-        }
-
-        return tiles;
-    } catch(exception) {
-        vector<palletTile> tiles;
-        return tiles; 
-    }
-}
 
 uint64_t timeSinceEpochMillisec() {
     using namespace std::chrono;
@@ -66,7 +23,7 @@ int main(int argc, char *argv[]) {
     palletFilePath = binaryPath.substr(0, binaryPath.find_last_of("/") + 1) + palletFilePath;
 
     cout << "Loading tile pallet from \"" << palletFilePath << "\"..." << endl;
-    const vector<palletTile> palletTiles = fetchPalletTiles(palletFilePath);
+    const vector<palletTile> palletTiles = Mosaic::fetchPalletTiles(palletFilePath);
     
     if (palletTiles.size() < 1) {
         cout << "Error: Unable to read \""<< palletFilePath <<"\"" << endl;
@@ -87,9 +44,9 @@ int main(int argc, char *argv[]) {
     cout << "Loaded tiles: " << palletTiles.size() << endl << endl; 
 
     cout << "Creating image CIELAB color array ..." << endl;
-    vector<CIELABColor> pixels_CIELAB = Image::fetchImagePixelCIELABColors(argc, argv);
+    vector<CIELABColor> pixels_CIELAB = Mosaic::fetchImagePixelCIELABColors(argc, argv);
     if (pixels_CIELAB.size() < 1) return 1;
-    cout << "Image resolution: " << Image::imageWidth << "x" << Image::imageHeight << " (" << pixels_CIELAB.size() << "px)" << endl << endl;
+    cout << "Image resolution: " << Mosaic::imageWidth << "x" << Mosaic::imageHeight << " (" << pixels_CIELAB.size() << "px)" << endl << endl;
 
     cout << "Calculating closest pixel/tile color matches..." << endl;
     uint64_t matchStartTime = timeSinceEpochMillisec();
@@ -102,7 +59,7 @@ int main(int argc, char *argv[]) {
 
     cout << "Generating mosaic image file..." << endl;
     uint64_t generationStartTime = timeSinceEpochMillisec();
-    Image::generateMosaicImageFile(tiles, palletTiles, palletTilesDirPath, debug);
+    Mosaic::generateMosaicImageFile(tiles, palletTiles, Mosaic::palletTilesDirPath, debug);
     uint64_t generationEndTime = timeSinceEpochMillisec();
 
     cout << endl << "Done!" << endl;

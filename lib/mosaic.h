@@ -1,5 +1,5 @@
-#ifndef IMAGE_H
-#define IMAGE_H
+#ifndef MOSAIC_H
+#define MOSAIC_H
 
 #pragma once
 #include <iostream>
@@ -7,15 +7,19 @@
 #include <vector>
 #include <filesystem>
 #include <map>
+#include <fstream> 
 #include "colors.h"
 
 using namespace std;
 
-class Image{
+class Mosaic{
     public:
         static string imageName;
         static unsigned int imageWidth;
         static unsigned int imageHeight;
+        static string palletTilesDirPath;
+
+        static vector<palletTile> fetchPalletTiles(string palletFilePath);
 
         static vector<RGBColor> fetchImagePixelRGBColors(string filePath_String, bool setImageResVars);
 

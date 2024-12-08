@@ -1,16 +1,56 @@
-#include "image.h"
+#include "mosaic.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#include "json.hpp"
 
 using namespace std::filesystem;
+using json = nlohmann::json;
 
-string Image::imageName = "output.png";
-unsigned int Image::imageWidth = 0;
-unsigned int Image::imageHeight = 0;
+string Mosaic::imageName = "output.png";
+unsigned int Mosaic::imageWidth = 0;
+unsigned int Mosaic::imageHeight = 0;
+string Mosaic::palletTilesDirPath = "pallet.json";
 
-vector<RGBColor> Image::fetchImagePixelRGBColors(string filePath_String, bool setImageResVars = false){
+vector<palletTile> Mosaic::fetchPalletTiles(string palletFilePath){
+    string jsonText;
+
+    try{
+        ifstream json_stream(palletFilePath);
+        while (getline(json_stream, jsonText)) {
+            continue;
+        }
+        json_stream.close(); 
+        json jsonData = json::parse(jsonText);
+
+        Mosaic::palletTilesDirPath = jsonData["dirPath"];
+
+        json jsonData_tiles = jsonData["tiles"];
+        int jsonData_count = 0; 
+        while (jsonData_tiles[jsonData_count] != nullptr) jsonData_count++;
+
+        vector<palletTile> tiles;
+        tiles.resize(jsonData_count);
+        for (int i = 0; i < jsonData_count; i++){
+            tiles[i].name = jsonData_tiles[i]["name"];
+            tiles[i].fileType = jsonData_tiles[i]["fileType"];
+
+            tiles[i].labColor = CIELABColor(
+                jsonData_tiles[i]["CIELABColor"]["L"], 
+                jsonData_tiles[i]["CIELABColor"]["a"],
+                jsonData_tiles[i]["CIELABColor"]["b"]
+            );
+        }
+
+        return tiles;
+    } catch(exception) {
+        vector<palletTile> tiles;
+        return tiles; 
+    }
+}
+
+vector<RGBColor> Mosaic::fetchImagePixelRGBColors(string filePath_String, bool setImageResVars = false){
     int width, height;
     int channels; // 1 for grayscale image, 3 for rgb, 4 for rgba...
     
@@ -75,7 +115,7 @@ vector<RGBColor> Image::fetchImagePixelRGBColors(string filePath_String, bool se
     return pixels_RGB;
 } 
 
-vector<CIELABColor> Image::fetchImagePixelCIELABColors(int argc, char *argv[]){
+vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(int argc, char *argv[]){
     string filePath_String = "input.png";
 
     // Parse the input strings from argv if args are defined
@@ -95,7 +135,7 @@ vector<CIELABColor> Image::fetchImagePixelCIELABColors(int argc, char *argv[]){
     return pixels_CIELAB;
 }
 
-void Image::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletTilesDirPath, bool debug = false){
+void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletTilesDirPath, bool debug = false){
     const unsigned int width = imageWidth;
     const unsigned int height = imageHeight;
     const unsigned int channels = 3;

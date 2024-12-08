@@ -5,7 +5,7 @@
 #include <filesystem> 
 #include <fstream> 
 #include "lib/colors.h"
-#include "lib/image.h"
+#include "lib/mosaic.h"
 
 using namespace std;
 using namespace std::filesystem;
@@ -58,9 +58,9 @@ int main(int argc, char *argv[]) {
 	do{
 		string filePath_String = filePath_List[global_i];
 
-		vector<RGBColor> pixelsRGB = Image::fetchImagePixelRGBColors(filePath_String, true);
+		vector<RGBColor> pixelsRGB = Mosaic::fetchImagePixelRGBColors(filePath_String, true);
 
-		RGBColor avrgRGBColor = Colors::calcAvrgImgRGBColor(pixelsRGB, Image::imageWidth, Image::imageWidth);
+		RGBColor avrgRGBColor = Colors::calcAvrgImgRGBColor(pixelsRGB, Mosaic::imageWidth, Mosaic::imageWidth);
 		CIELABColor avrgCIELABColor = Colors::rgbToCIELAB(avrgRGBColor);
 
 		// This just parses the image name string from the filename

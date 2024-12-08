@@ -5,9 +5,9 @@ del template-gen.exe
 del terramosaic.exe
 
 echo Compiling "template-gen.cpp"...
-g++ -Wall -o template-gen template-gen.cpp lib/colors.cpp lib/image.cpp -I.
+g++ -Wall -o template-gen template-gen.cpp lib/colors.cpp lib/mosaic.cpp -I.
 
 echo Compiling "main.cpp"...
-g++ -Wall -o terramosaic main.cpp ./lib/colors.cpp ./lib/image.cpp  -I.
+g++ -Wall -o terramosaic main.cpp ./lib/colors.cpp ./lib/mosaic.cpp  -I.
 
 echo Done!
