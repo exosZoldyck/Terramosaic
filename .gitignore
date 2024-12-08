@@ -1,0 +1,9 @@
+*.png
+*.jpg
+*.bmp
+*.exe
+*.ini
+pallet.json
+
+/tiles
+/tiles_all
