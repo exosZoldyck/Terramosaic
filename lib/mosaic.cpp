@@ -147,7 +147,7 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
     // The image is made up of "width * height" tiles
     uint8_t* imageData = new uint8_t[(width * palletTileWidth) * (height * palletTileHeight) * channels];
     vector<vector<vector<uint8_t>>> imageData_matrix(width * palletTileWidth, vector<vector<uint8_t>>(height * palletTileHeight, vector<uint8_t>(3)));
-    
+
     // This is used so the loop doesn't have to load the same 
     // pallet tile image color values every time it want's to 
     // use the same tile
@@ -192,15 +192,6 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
 
     // Free the memory because the pallet tiles aren't used after this point
     loadedPalletTiles.clear();
-
-    // if (debug) for (int x = 0; x < imageData_matrix.size(); x++) {
-    //     cout << endl;
-    //     for (int y = 0; y < imageData_matrix[x].size(); y++) {
-    //         cout << "rgb(" << (int)imageData_matrix[x][y][0] << ","
-    //             << (int)imageData_matrix[x][y][1] << ","
-    //             << (int)imageData_matrix[x][y][2] << ") ";
-    //     }
-    // }
 
     // Transform the 2D array of RGBs into a 1D RGB array
     for (int y = 0; y < height * palletTileHeight; y++) {

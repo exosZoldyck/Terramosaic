@@ -99,10 +99,10 @@ int main(int argc, char *argv[]) {
 
 	jsonText += "]}";
 
-	// Write to tiles template JSON file
-	ofstream tilesTemplate_stream("pallet.json");
-	tilesTemplate_stream << jsonText;
-	tilesTemplate_stream.close();
+	// Write to tiles pallet JSON file
+	ofstream tilesPallet_stream("pallet.json");
+	tilesPallet_stream << jsonText;
+	tilesPallet_stream.close();
 
 	return 0;
 } 
