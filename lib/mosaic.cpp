@@ -136,17 +136,16 @@ vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(int argc, char *argv[]){
 }
 
 void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletTilesDirPath, bool debug = false){
-    const unsigned int width = imageWidth;
-    const unsigned int height = imageHeight;
     const unsigned int channels = 3;
     const unsigned int palletTileWidth = 16;
     const unsigned int palletTileHeight = 16;
+    const unsigned int width = imageWidth * palletTileWidth;
+    const unsigned int height = imageHeight * palletTileHeight;
     
     // Every pixel has "channels" channels
     // Every tile has "palletTileWidth * palletTileHeight" pixels
     // The image is made up of "width * height" tiles
-    uint8_t* imageData = new uint8_t[(width * palletTileWidth) * (height * palletTileHeight) * channels];
-    vector<vector<vector<uint8_t>>> imageData_matrix(width * palletTileWidth, vector<vector<uint8_t>>(height * palletTileHeight, vector<uint8_t>(3)));
+    uint8_t* imageData = new uint8_t[width * height * channels];
 
     // This is used so the loop doesn't have to load the same 
     // pallet tile image color values every time it want's to 
@@ -154,9 +153,9 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
     map<int, vector<RGBColor>> loadedPalletTiles;
 
     // For every i,j tile with index
-    for (int j = 0; j < height; j++) {
-        for (int i = 0; i < width; i++) {
-            unsigned int tileIndex = (j * width + i);
+    for (int j = 0; j < imageHeight; j++) {
+        for (int i = 0; i < imageWidth; i++) {
+            unsigned int tileIndex = (j * imageWidth + i);
 
             // Fetch the RGB color pixels of the current tile
             Tile tile = tiles[tileIndex];
@@ -179,12 +178,15 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
             // For each x,y pixel of pallet image
             for (int y = 0; y < palletTileHeight; y++) {
                 for (int x = 0; x < palletTileWidth; x++) {
-                    unsigned globalX = x + i * palletTileWidth;
-                    unsigned globalY = y + j * palletTileHeight;
+                    // Xg = X + (i * W)
+                    // Yg = Y + (j * H)
+                    // Wt = w * W
+                    // INDEXxy = Xg + (Yg * Wt)
+                    uint64_t pixelIndex = ((x + (i * palletTileWidth)) + ((y + (j * palletTileHeight)) * width)) * channels; 
 
-                    imageData_matrix[globalX][globalY][0] = (uint8_t)tilePixels_RGB[y * palletTileWidth + x].r;
-                    imageData_matrix[globalX][globalY][1] = (uint8_t)tilePixels_RGB[y * palletTileWidth + x].g;
-                    imageData_matrix[globalX][globalY][2] = (uint8_t)tilePixels_RGB[y * palletTileWidth + x].b;
+                    imageData[pixelIndex] = (uint8_t)tilePixels_RGB[x + (y * palletTileWidth)].r;
+                    imageData[pixelIndex + 1] = (uint8_t)tilePixels_RGB[x + (y * palletTileWidth)].g;
+                    imageData[pixelIndex + 2] = (uint8_t)tilePixels_RGB[x + (y * palletTileWidth)].b;
                 }
             }
         }
@@ -193,19 +195,8 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
     // Free the memory because the pallet tiles aren't used after this point
     loadedPalletTiles.clear();
 
-    // Transform the 2D array of RGBs into a 1D RGB array
-    for (int y = 0; y < height * palletTileHeight; y++) {
-        for (int x = 0; x < width * palletTileWidth; x++) {
-            uint64_t pixelIndex = (y * width * palletTileWidth + x) * channels;
-
-            imageData[pixelIndex] = imageData_matrix[x][y][0];
-            imageData[pixelIndex + 1] = imageData_matrix[x][y][1];
-            imageData[pixelIndex + 2] = imageData_matrix[x][y][2];
-        }
-    }
-
     imageName += "_mosaic.png";
-    stbi_write_png(imageName.c_str(), width * palletTileWidth, height * palletTileHeight, channels, imageData, width * palletTileWidth * channels);
+    stbi_write_png(imageName.c_str(), width, height, channels, imageData, width * channels);
     
     // Free the image data pointer to avoid memory leak
     delete [] imageData;
