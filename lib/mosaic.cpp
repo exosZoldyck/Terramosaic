@@ -11,6 +11,7 @@ using json = nlohmann::json;
 string Mosaic::imageName = "output.png";
 unsigned int Mosaic::imageWidth = 0;
 unsigned int Mosaic::imageHeight = 0;
+unsigned int Mosaic::minResolution = 0;
 string Mosaic::palletTilesDirPath = "pallet.json";
 
 vector<palletTile> Mosaic::fetchPalletTiles(string palletFilePath){
@@ -24,6 +25,7 @@ vector<palletTile> Mosaic::fetchPalletTiles(string palletFilePath){
         json_stream.close(); 
         json jsonData = json::parse(jsonText);
 
+        Mosaic::minResolution = jsonData["minWidthHeight"]; 
         Mosaic::palletTilesDirPath = jsonData["dirPath"];
 
         json jsonData_tiles = jsonData["tiles"];
@@ -50,7 +52,7 @@ vector<palletTile> Mosaic::fetchPalletTiles(string palletFilePath){
     }
 }
 
-vector<RGBColor> Mosaic::fetchImagePixelRGBColors(string filePath_String, bool setImageResVars = false){
+vector<RGBColor> Mosaic::fetchImagePixelRGBColors(string filePath_String, bool setImageResVars = false, unsigned int *minResolution_ptr = nullptr){
     int width, height;
     int channels; // 1 for grayscale image, 3 for rgb, 4 for rgba...
     
@@ -67,6 +69,11 @@ vector<RGBColor> Mosaic::fetchImagePixelRGBColors(string filePath_String, bool s
         stbi_image_free(imageData);
         vector<RGBColor> nullColor;
         return nullColor;
+    }
+
+    if (minResolution_ptr != nullptr){
+        if (*minResolution_ptr > width) *minResolution_ptr = width;
+        if (*minResolution_ptr > height) *minResolution_ptr = height;
     }
 
     // This is used for setting the input image's width and height global vars
@@ -137,8 +144,8 @@ vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(int argc, char *argv[]){
 
 void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletTilesDirPath, bool debug = false){
     const unsigned int channels = 3;
-    const unsigned int palletTileWidth = 16;
-    const unsigned int palletTileHeight = 16;
+    const unsigned int palletTileWidth = minResolution;
+    const unsigned int palletTileHeight = minResolution;
     const unsigned int width = imageWidth * palletTileWidth;
     const unsigned int height = imageHeight * palletTileHeight;
     

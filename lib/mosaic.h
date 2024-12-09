@@ -17,11 +17,12 @@ class Mosaic{
         static string imageName;
         static unsigned int imageWidth;
         static unsigned int imageHeight;
+        static unsigned int minResolution;
         static string palletTilesDirPath;
 
         static vector<palletTile> fetchPalletTiles(string palletFilePath);
 
-        static vector<RGBColor> fetchImagePixelRGBColors(string filePath_String, bool setImageResVars);
+        static vector<RGBColor> fetchImagePixelRGBColors(string filePath_String, bool setImageResVars, unsigned int *minResolution);
 
         static vector<CIELABColor> fetchImagePixelCIELABColors(int argc, char *argv[]);
 

@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 	vector<string> filePath_List;
 	string jsonText = "{\"dirPath\": ";
 	if (argc <= 1){
-		cout << "Error: No arg provided" << endl;
+		std::cout << "Error: No arg provided" << endl;
 		system("PAUSE");
 		return 1;
 	}
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 		}
 		if (!endsWith(path_string, "/")) path_string += "/";
 		
-		jsonText += "\"" + path_string + "\", \"tiles\": [";
+		jsonText += "\"" + path_string + "\", ";
 
 		for (auto const & dir_entry : directory_iterator{p}){
 			string filePath = dir_entry.path().string();
@@ -48,16 +48,19 @@ int main(int argc, char *argv[]) {
 		}
 	} 
 	else{
-		cout << "Error: Provided arg must be directory path" << endl;
+		std::cout << "Error: Provided arg must be directory path" << endl;
 		system("PAUSE");
 		return 1;
 	}
 
 	int global_i = 0;
+	unsigned int minResolution = 2'147'483'647;
+	unsigned int *minResolution_ptr = &minResolution;
+	string tilesJSONString = "\"tiles\": [";
 	do{
 		string filePath_String = filePath_List[global_i];
 
-		vector<RGBColor> pixelsRGB = Mosaic::fetchImagePixelRGBColors(filePath_String, true);
+		vector<RGBColor> pixelsRGB = Mosaic::fetchImagePixelRGBColors(filePath_String, true, minResolution_ptr);
 
 		RGBColor avrgRGBColor = Colors::calcAvrgImgRGBColor(pixelsRGB, Mosaic::imageWidth, Mosaic::imageWidth);
 		CIELABColor avrgCIELABColor = Colors::rgbToCIELAB(avrgRGBColor);
@@ -81,7 +84,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		jsonText += "{\"name\": \"" + name + "\", "
+		tilesJSONString += "{\"name\": \"" + name + "\", "
 			+ "\"fileType\": \"" + fileType +
 			+ "\", \"CIELABColor\": {"
 			+ "\"L\": " + to_string(avrgCIELABColor.L) + ", " 
@@ -89,15 +92,15 @@ int main(int argc, char *argv[]) {
 			+ "\"b\": " + to_string(avrgCIELABColor.b) + "" 
 			+ "}}";
 
-		if (global_i + 1 < filePath_List.size()) jsonText += ", ";
+		if (global_i + 1 < filePath_List.size()) tilesJSONString += ", ";
 
-		cout << "Added \"" << name << "\" with " << "lab(" 
+		std::cout << "Added \"" << name << "\" with " << "lab(" 
 			<< avrgCIELABColor.toString() << ")" << endl;
 
 		global_i++;
 	} while (global_i < filePath_List.size());
 
-	jsonText += "]}";
+	jsonText += "\"minWidthHeight\": " + to_string(minResolution) + ", " + tilesJSONString + "]}";
 
 	// Write to tiles pallet JSON file
 	ofstream tilesPallet_stream("pallet.json");
