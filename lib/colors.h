@@ -14,14 +14,17 @@ class RGBColor{
 		int r;
 		int g;
 		int b;
+		int a;
 
-		void setValues(int r, int g, int b);
+		void setValues(int r, int g, int b, int a);
 
 		string toString();
 
 	RGBColor();
 
 	RGBColor(int r, int g, int b);
+
+	RGBColor(int r, int g, int b, int a);
 };
 
 class CIELABColor{
@@ -29,14 +32,17 @@ class CIELABColor{
 		double L;
     	double a;
     	double b;
+		bool transparent;
 
-		void setValues(double L, double a, double b);
+		void setValues(double L, double a, double b, bool transparent);
 
 		string toString();
 
 	CIELABColor();
 
 	CIELABColor(double L, double a, double b);
+
+	CIELABColor(double L, double a, double b, bool transparent);
 };
 
 struct Tile{

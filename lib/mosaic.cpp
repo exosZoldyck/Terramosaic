@@ -108,11 +108,19 @@ vector<RGBColor> Mosaic::fetchImagePixelRGBColors(string filePath_String, bool s
         for (int x = 0; x < width; x++) {
             uint64_t pos = (y * width + x) * channels;
 
-            unsigned int r = imageData[pos];
-            unsigned int g = imageData[pos + 1];
-            unsigned int b = imageData[pos + 2];
+            uint8_t r = imageData[pos];
+            uint8_t g = imageData[pos + 1];
+            uint8_t b = imageData[pos + 2];
+            
+            uint8_t a;
+            if (channels == 4){
+                // If the pixel in main image is (50% >= transparent), 
+                // make it fully transparent for the mosaic generation
+                if (setImageResVars) a = ((uint8_t)imageData[pos + 3] >= 128) ? 255 : 0;
+                else a = (uint8_t)imageData[pos + 3];
+            } 
 
-            pixels_RGB[(y * width + x)].setValues(r, g, b);
+            pixels_RGB[(y * width + x)].setValues(r, g, b, (channels == 4) ? a : 255);
         }
     }
 
@@ -143,7 +151,7 @@ vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(int argc, char *argv[]){
 }
 
 void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletTilesDirPath, bool debug = false){
-    const unsigned int channels = 3;
+    const unsigned int channels = 4;
     const unsigned int palletTileWidth = minResolution;
     const unsigned int palletTileHeight = minResolution;
     const unsigned int width = imageWidth * palletTileWidth;
@@ -159,6 +167,14 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
     // use the same tile
     map<int, vector<RGBColor>> loadedPalletTiles;
 
+    // Load default transparent tile as index "-1"
+    vector<RGBColor> transparentTile;
+    transparentTile.resize(palletTileWidth * palletTileHeight);
+    for (int i = 0; i < palletTileWidth * palletTileHeight; i++)
+        transparentTile[i] = RGBColor(0, 0, 0, 0);
+    loadedPalletTiles.insert({-1, transparentTile});
+    transparentTile.clear();
+
     // For every i,j tile with index
     for (int j = 0; j < imageHeight; j++) {
         for (int i = 0; i < imageWidth; i++) {
@@ -168,7 +184,7 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
             Tile tile = tiles[tileIndex];
 
             vector<RGBColor> tilePixels_RGB;
-            
+
             // Check to see if pallet tile can be reused
             if (loadedPalletTiles.count(tile.palletId) > 0){
                 tilePixels_RGB = loadedPalletTiles[tile.palletId];
@@ -194,6 +210,7 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
                     imageData[pixelIndex] = (uint8_t)tilePixels_RGB[x + (y * palletTileWidth)].r;
                     imageData[pixelIndex + 1] = (uint8_t)tilePixels_RGB[x + (y * palletTileWidth)].g;
                     imageData[pixelIndex + 2] = (uint8_t)tilePixels_RGB[x + (y * palletTileWidth)].b;
+                    imageData[pixelIndex + 3] = (uint8_t)tilePixels_RGB[x + (y * palletTileWidth)].a;
                 }
             }
         }

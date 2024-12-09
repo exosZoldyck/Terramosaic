@@ -1,10 +1,11 @@
 #include "colors.h"
 
 // RGBColor
-void RGBColor::setValues(int r, int g, int b){
+void RGBColor::setValues(int r, int g, int b, int a){
     this->r = r;
     this->g = g;
     this->b = b;
+    this->a = a;
 }
 
 string RGBColor::toString(){
@@ -19,15 +20,24 @@ RGBColor::RGBColor(int r, int g, int b){
     this->r = r;
     this->g = g;
     this->b = b;
+    this->a = 255;
+}
+
+RGBColor::RGBColor(int r, int g, int b, int a){
+    this->r = r;
+    this->g = g;
+    this->b = b;
+    this->a = a;
 }
 
 
 
 // CIELABColor
-void CIELABColor::setValues(double L, double a, double b){
+void CIELABColor::setValues(double L, double a, double b, bool transparent){
     this->L = L;
     this->a = a;
     this->b = b;
+    this->transparent = transparent;
 }
 
 string CIELABColor::toString(){
@@ -42,6 +52,14 @@ CIELABColor::CIELABColor(double L, double a, double b){
     this->L = L;
     this->a = a;
     this->b = b;
+    this->transparent = false;
+}
+
+CIELABColor::CIELABColor(double L, double a, double b, bool transparent){
+    this->L = L;
+    this->a = a;
+    this->b = b;
+    this->transparent = transparent;
 }
 
 
@@ -97,7 +115,7 @@ CIELABColor Colors::rgbToCIELAB(RGBColor rgbColor){
     Y = (Y > 0.008856) ? pow(Y, 1.0 / 3.0) : (903.3 * Y + 16.0) / 116.0;
     Z = (Z > 0.008856) ? pow(Z, 1.0 / 3.0) : (903.3 * Z + 16.0) / 116.0;
 
-    return CIELABColor((0.0, 116.0 * Y - 16.0), (X - Y) * 500.0, (Y - Z) * 200.0);
+    return CIELABColor((0.0, 116.0 * Y - 16.0), (X - Y) * 500.0, (Y - Z) * 200.0, (rgbColor.a == 0) ? true : false);
 } 
 
 double Colors::calcDeltaE(CIELABColor labColor1, CIELABColor labColor2){
@@ -119,6 +137,13 @@ vector<Tile> Colors::matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const
     for(int j = 0; j < pixels.size(); j++){
         Tile tile;
         tile.pixelId = j;
+
+        // This is for if the main image pixel is (50% >= transparent)
+        if (pixels[j].transparent) {
+            tile.palletId = -1;
+            tiles[j] = tile;
+            continue;
+        }
 
         for(int i = 0; i < palletTiles.size(); i++){
             palletTile palletTile = palletTiles[i];
