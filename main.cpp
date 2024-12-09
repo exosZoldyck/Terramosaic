@@ -30,16 +30,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     
-    if (debug){
-        cout << "------------------- Loaded tiles -------------------" << endl;
+    string loadedTiles_String = "\n------------------- Loaded tiles -------------------\n";
         for(int i = 0; i < palletTiles.size(); i++){
-            cout << palletTiles[i].name << palletTiles[i].fileType << "\t| lab("
-                << palletTiles[i].labColor.L << ", "
-                << palletTiles[i].labColor.a << ", "
-                << palletTiles[i].labColor.b << ")" << endl;
+            loadedTiles_String += palletTiles[i].name + palletTiles[i].fileType + " | lab("
+                + to_string(palletTiles[i].labColor.L) + ", "
+                + to_string(palletTiles[i].labColor.a) + ", "
+                + to_string(palletTiles[i].labColor.b) + ")\n";
         }
-        cout << "----------------------------------------------------" << endl << endl;
-    }
+    loadedTiles_String += "----------------------------------------------------\n\n";
+    cout << loadedTiles_String;
     cout << "Loaded tiles: " << palletTiles.size() << endl << endl; 
 
     cout << "Creating image CIELAB color array ..." << endl;
