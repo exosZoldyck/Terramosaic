@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
     Pallet *pallet_ptr = &pallet;
     // This function sets the value of "pallet" internally using a pointer
     Pallet::fetchPalletTiles(pallet_ptr, palletFilePath);
+    pallet_ptr = nullptr; 
     
     if (pallet.tiles.size() < 1) {
         cout << "Error: Unable to read \""<< palletFilePath <<"\"" << endl;
