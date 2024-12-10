@@ -3,6 +3,8 @@
 #include <filesystem>
 #include "lib/colors.h"
 #include "lib/mosaic.h"
+#include "lib/pallet.h"
+#include "lib/tile.h"
 
 using namespace std;
 using namespace std::filesystem;
@@ -37,24 +39,27 @@ int main(int argc, char *argv[]) {
     }
 
     cout << "Loading tile pallet from \"" << palletFilePath << "\"..." << endl;
-    const vector<palletTile> palletTiles = Mosaic::fetchPalletTiles(palletFilePath);
+    Pallet pallet = Pallet();
+    Pallet *pallet_ptr = &pallet;
+    // This function sets the value of "pallet" internally using a pointer
+    Pallet::fetchPalletTiles(pallet_ptr, palletFilePath);
     
-    if (palletTiles.size() < 1) {
+    if (pallet.tiles.size() < 1) {
         cout << "Error: Unable to read \""<< palletFilePath <<"\"" << endl;
         system("PAUSE");
         return 1;
     }
     
     string loadedTiles_String = "\n------------------- Loaded tiles -------------------\n";
-        for(int i = 0; i < palletTiles.size(); i++){
-            loadedTiles_String += palletTiles[i].name + palletTiles[i].fileType + " | lab("
-                + to_string(palletTiles[i].labColor.L) + ", "
-                + to_string(palletTiles[i].labColor.a) + ", "
-                + to_string(palletTiles[i].labColor.b) + ")\n";
+        for(int i = 0; i < pallet.tiles.size(); i++){
+            loadedTiles_String += pallet.tiles[i].name + pallet.tiles[i].fileType + " | lab("
+                + to_string(pallet.tiles[i].labColor.L) + ", "
+                + to_string(pallet.tiles[i].labColor.a) + ", "
+                + to_string(pallet.tiles[i].labColor.b) + ")\n";
         }
     loadedTiles_String += "----------------------------------------------------\n\n";
     cout << loadedTiles_String;
-    cout << "Loaded tiles: " << palletTiles.size() << endl << endl; 
+    cout << "Loaded tiles: " << pallet.tiles.size() << endl << endl; 
 
     cout << "Creating image CIELAB color array ..." << endl;
     vector<CIELABColor> pixels_CIELAB = Mosaic::fetchImagePixelCIELABColors(argc, argv);
@@ -63,7 +68,7 @@ int main(int argc, char *argv[]) {
 
     cout << "Calculating closest pixel/tile color matches..." << endl;
     uint64_t matchStartTime = timeSinceEpochMillisec();
-    vector<Tile> tiles = Colors::matchPixelsAndPalletTiles(pixels_CIELAB, palletTiles, debug);
+    vector<Tile> tiles = Mosaic::matchPixelsAndPalletTiles(pixels_CIELAB, pallet.tiles, debug);
     uint64_t matchEndTime = timeSinceEpochMillisec();
 
     if (debug) for(int i = 0; i < tiles.size(); i++){
@@ -73,7 +78,7 @@ int main(int argc, char *argv[]) {
     cout << "Generating mosaic image file..." << endl;
     uint64_t generationStartTime = timeSinceEpochMillisec();
     try{
-        Mosaic::generateMosaicImageFile(tiles, palletTiles, debug);
+        Mosaic::generateMosaicImageFile(tiles, pallet, debug);
     } catch (exception) {
         cout << "Error: Unable to write image file" << endl;
         system("PAUSE");
@@ -82,7 +87,7 @@ int main(int argc, char *argv[]) {
     uint64_t generationEndTime = timeSinceEpochMillisec();
 
     try{
-        Mosaic::generateMosaicJSONFile(tiles, palletTiles, palletFilePath, matchEndTime - matchStartTime, generationEndTime - generationStartTime);
+        Mosaic::generateMosaicJSONFile(tiles, pallet, palletFilePath, matchEndTime - matchStartTime, generationEndTime - generationStartTime);
     } catch (exception) {
         cout << "Warning: Unable to write JSON file" << endl;
         system("PAUSE");
@@ -91,7 +96,7 @@ int main(int argc, char *argv[]) {
     cout << endl << "Done!" << endl;
 
     cout << endl << "Pixels processed: " << pixels_CIELAB.size()
-        << endl << "Match calculations: " << pixels_CIELAB.size() * palletTiles.size()
+        << endl << "Match calculations: " << pixels_CIELAB.size() * pallet.tiles.size()
         << endl << "Match calculation time: " 
         << (double)(matchEndTime - matchStartTime) / (double)1000 << " s" << endl
         << endl << "Mosaic generation time: " 

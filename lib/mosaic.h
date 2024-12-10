@@ -8,7 +8,9 @@
 #include <filesystem>
 #include <map>
 #include <fstream> 
+#include "tile.h"
 #include "colors.h"
+#include "pallet.h"
 
 using namespace std;
 
@@ -17,18 +19,16 @@ class Mosaic{
         static string imageName;
         static unsigned int imageWidth;
         static unsigned int imageHeight;
-        static unsigned int minResolution;
-        static string palletTilesDirPath;
-
-        static vector<palletTile> fetchPalletTiles(string palletFilePath);
 
         static vector<RGBColor> fetchImagePixelRGBColors(string filePath_String, bool setImageResVars, unsigned int *minResolution);
 
         static vector<CIELABColor> fetchImagePixelCIELABColors(int argc, char *argv[]);
+        
+        static vector<Tile> matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const vector<palletTile> palletTiles, bool debug);
 
-        static void generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, bool debug);
+        static void generateMosaicImageFile(vector<Tile> tiles, Pallet pallet, bool debug);
 
-        static void generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletFilePath, uint64_t calculationTime, uint64_t generationTime);
+        static void generateMosaicJSONFile(vector<Tile> tiles, Pallet pallet, string palletFilePath, uint64_t calculationTime, uint64_t generationTime);
 };
 
 #endif

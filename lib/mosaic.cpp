@@ -11,46 +11,6 @@ using json = nlohmann::json;
 string Mosaic::imageName = "output.png";
 unsigned int Mosaic::imageWidth = 0;
 unsigned int Mosaic::imageHeight = 0;
-unsigned int Mosaic::minResolution = 0;
-string Mosaic::palletTilesDirPath = "pallet.json";
-
-vector<palletTile> Mosaic::fetchPalletTiles(string palletFilePath){
-    string jsonText;
-
-    try{
-        ifstream json_stream(palletFilePath);
-        while (getline(json_stream, jsonText)) {
-            continue;
-        }
-        json_stream.close(); 
-        json jsonData = json::parse(jsonText);
-
-        Mosaic::minResolution = jsonData["minWidthHeight"]; 
-        Mosaic::palletTilesDirPath = jsonData["dirPath"];
-
-        json jsonData_tiles = jsonData["tiles"];
-        int jsonData_count = 0; 
-        while (jsonData_tiles[jsonData_count] != nullptr) jsonData_count++;
-
-        vector<palletTile> tiles;
-        tiles.resize(jsonData_count);
-        for (int i = 0; i < jsonData_count; i++){
-            tiles[i].name = jsonData_tiles[i]["name"];
-            tiles[i].fileType = jsonData_tiles[i]["fileType"];
-
-            tiles[i].labColor = CIELABColor(
-                jsonData_tiles[i]["CIELABColor"]["L"], 
-                jsonData_tiles[i]["CIELABColor"]["a"],
-                jsonData_tiles[i]["CIELABColor"]["b"]
-            );
-        }
-
-        return tiles;
-    } catch(exception) {
-        vector<palletTile> tiles;
-        return tiles; 
-    }
-}
 
 vector<RGBColor> Mosaic::fetchImagePixelRGBColors(string filePath_String, bool setImageResVars = false, unsigned int *minResolution_ptr = nullptr){
     int width, height;
@@ -150,10 +110,49 @@ vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(int argc, char *argv[]){
     return pixels_CIELAB;
 }
 
-void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, bool debug = false){
+vector<Tile> Mosaic::matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const vector<palletTile> palletTiles, bool debug = false){
+    vector<Tile> tiles;
+    tiles.resize(pixels.size());
+
+    // For each pixel (j) create a new tile, and
+    // search through every tile (i) in pallet to find
+    // the closest match (smallest deltaE)
+    for(int j = 0; j < pixels.size(); j++){
+        Tile tile;
+        tile.pixelId = j;
+
+        // This is for if the main image pixel is (50% >= transparent)
+        if (pixels[j].transparent) {
+            tile.palletId = -1;
+            tiles[j] = tile;
+            continue;
+        }
+
+        for(int i = 0; i < palletTiles.size(); i++){
+            palletTile palletTile = palletTiles[i];
+
+            double deltaE = Colors::calcDeltaE(pixels[j], palletTile.labColor);
+
+            if (deltaE < tile.closestDeltaE) {
+                tile.closestDeltaE = deltaE;
+                tile.palletId = i;
+            };
+        }
+
+        if (debug) cout << "Progress: "
+            << (int)((float)((j+1) * palletTiles.size()) / (float)(palletTiles.size() * pixels.size()) * 100) << "%"
+            << "\t" << (j+1) * palletTiles.size() << "/" << (palletTiles.size() * pixels.size()) << endl;
+
+        tiles[j] = tile;
+    }
+
+    return tiles;
+}
+
+void Mosaic::generateMosaicImageFile(vector<Tile> tiles, Pallet pallet, bool debug = false){
     const unsigned int channels = 4;
-    const unsigned int palletTileWidth = minResolution;
-    const unsigned int palletTileHeight = minResolution;
+    const unsigned int palletTileWidth = pallet.minResolution;
+    const unsigned int palletTileHeight = pallet.minResolution;
     const unsigned int width = imageWidth * palletTileWidth;
     const unsigned int height = imageHeight * palletTileHeight;
     
@@ -191,7 +190,7 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
             }
             // If not, load it in and add it to the list of loaded tiles
             else{
-                string tileImgFilePath = palletTilesDirPath + palletTiles[tile.palletId].name + palletTiles[tile.palletId].fileType;
+                string tileImgFilePath = pallet.palletTilesDirPath + pallet.tiles[tile.palletId].name + pallet.tiles[tile.palletId].fileType;
                 tilePixels_RGB = fetchImagePixelRGBColors(tileImgFilePath);
                 if (tilePixels_RGB.size() < 1) return;
 
@@ -228,7 +227,7 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
     return;
 } 
 
-void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletFilePath, uint64_t calculationTime, uint64_t generationTime){
+void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, Pallet pallet, string palletFilePath, uint64_t calculationTime, uint64_t generationTime){
     string jsonText = "{\"width\": " + to_string(imageWidth) + ", "
         + "\"height\": " + to_string(imageHeight)+ ", "
         + "\"palletFilePath\": \"" + palletFilePath + "\", "
@@ -243,7 +242,7 @@ void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palle
 
             jsonText += "{\"palletTileId\": " + to_string(tiles[tileIndex].palletId) + ", "
                 + "\"palletTileName\": \""
-                + ((tiles[tileIndex].palletId >= 0) ? palletTiles[tiles[tileIndex].palletId].name : "none") + "\"}";
+                + ((tiles[tileIndex].palletId >= 0) ? pallet.tiles[tiles[tileIndex].palletId].name : "none") + "\"}";
             if (j + 1 < imageHeight || i + 1  < imageWidth) jsonText += ", ";
         }
     }
