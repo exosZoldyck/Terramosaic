@@ -244,10 +244,13 @@ void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palle
             if (j + 1 < imageHeight || i + 1  < imageWidth) jsonText += ", ";
         }
     }
+
     jsonText += "]}";
 
 	// Write to tiles pallet JSON file
 	ofstream tilesPallet_stream(imageName + "_mosiac.json");
 	tilesPallet_stream << jsonText;
 	tilesPallet_stream.close();
+
+    return;
 }
