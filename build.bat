@@ -1,8 +1,6 @@
 echo off
 cls
 
-del pallet-gen.exe
-del terramosaic.exe
 md build
 
 echo Compiling "pallet-gen.cpp"...
