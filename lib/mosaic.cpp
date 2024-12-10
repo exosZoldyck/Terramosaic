@@ -219,8 +219,7 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
     // Free the memory because the pallet tiles aren't used after this point
     loadedPalletTiles.clear();
 
-    imageName += "_mosaic.png";
-    stbi_write_png(imageName.c_str(), width, height, channels, imageData, width * channels);
+    stbi_write_png((imageName + "_mosaic.png").c_str(), width, height, channels, imageData, width * channels);
     
     // Free the image data pointer to avoid memory leak
     delete [] imageData;
@@ -229,10 +228,12 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
     return;
 } 
 
-void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletFilePath){
+void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletFilePath, uint64_t calculationTime, uint64_t generationTime){
     string jsonText = "{\"width\": " + to_string(imageWidth) + ", "
         + "\"height\": " + to_string(imageHeight)+ ", "
         + "\"palletFilePath\": \"" + palletFilePath + "\", "
+        + "\"calculationTime\": " + to_string(calculationTime) + ", "
+        + "\"generationTime\": " + to_string(generationTime) + ", "
         + "\"tiles\": [";
 
     // For every i,j pixel of image
@@ -240,7 +241,9 @@ void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palle
         for (int i = 0; i < imageWidth; i++) {
             unsigned int tileIndex = (j * imageWidth + i);
 
-            jsonText += to_string(tiles[tileIndex].palletId);
+            jsonText += "{\"palletTileId\": " + to_string(tiles[tileIndex].palletId) + ", "
+                + "\"palletTileName\": \""
+                + ((tiles[tileIndex].palletId >= 0) ? palletTiles[tiles[tileIndex].palletId].name : "none") + "\"}";
             if (j + 1 < imageHeight || i + 1  < imageWidth) jsonText += ", ";
         }
     }

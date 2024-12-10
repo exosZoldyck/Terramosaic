@@ -28,7 +28,7 @@ class Mosaic{
 
         static void generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, bool debug);
 
-        static void generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletFilePath);
+        static void generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletFilePath, uint64_t calculationTime, uint64_t generationTime);
 };
 
 #endif

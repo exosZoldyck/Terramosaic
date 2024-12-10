@@ -72,10 +72,21 @@ int main(int argc, char *argv[]) {
 
     cout << "Generating mosaic image file..." << endl;
     uint64_t generationStartTime = timeSinceEpochMillisec();
-    Mosaic::generateMosaicImageFile(tiles, palletTiles, debug);
+    try{
+        Mosaic::generateMosaicImageFile(tiles, palletTiles, debug);
+    } catch (exception) {
+        cout << "Error: Unable to write image file" << endl;
+        system("PAUSE");
+        return 1;
+    }
     uint64_t generationEndTime = timeSinceEpochMillisec();
 
-    Mosaic::generateMosaicJSONFile(tiles, palletTiles, palletFilePath);
+    try{
+        Mosaic::generateMosaicJSONFile(tiles, palletTiles, palletFilePath, matchEndTime - matchStartTime, generationEndTime - generationStartTime);
+    } catch (exception) {
+        cout << "Warning: Unable to write JSON file" << endl;
+        system("PAUSE");
+    }
 
     cout << endl << "Done!" << endl;
 
@@ -91,7 +102,7 @@ int main(int argc, char *argv[]) {
 
     // Pause before exiting
     uint64_t execFinishTime = timeSinceEpochMillisec();
-    while(timeSinceEpochMillisec() < execFinishTime + 1000);
+    while(timeSinceEpochMillisec() < execFinishTime + 1500);
 
 	return 0;
 } 
