@@ -150,7 +150,7 @@ vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(int argc, char *argv[]){
     return pixels_CIELAB;
 }
 
-void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletTilesDirPath, bool debug = false){
+void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, bool debug = false){
     const unsigned int channels = 4;
     const unsigned int palletTileWidth = minResolution;
     const unsigned int palletTileHeight = minResolution;
@@ -228,3 +228,26 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> pall
 
     return;
 } 
+
+void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletFilePath){
+    string jsonText = "{\"width\": " + to_string(imageWidth) + ", "
+        + "\"height\": " + to_string(imageHeight)+ ", "
+        + "\"palletFilePath\": \"" + palletFilePath + "\", "
+        + "\"tiles\": [";
+
+    // For every i,j pixel of image
+    for (int j = 0; j < imageHeight; j++) {
+        for (int i = 0; i < imageWidth; i++) {
+            unsigned int tileIndex = (j * imageWidth + i);
+
+            jsonText += to_string(tiles[tileIndex].palletId);
+            if (j + 1 < imageHeight || i + 1  < imageWidth) jsonText += ", ";
+        }
+    }
+    jsonText += "]}";
+
+	// Write to tiles pallet JSON file
+	ofstream tilesPallet_stream(imageName + "_mosiac.json");
+	tilesPallet_stream << jsonText;
+	tilesPallet_stream.close();
+}

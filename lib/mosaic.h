@@ -26,7 +26,9 @@ class Mosaic{
 
         static vector<CIELABColor> fetchImagePixelCIELABColors(int argc, char *argv[]);
 
-        static void generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletTilesDirPath, bool debug);
+        static void generateMosaicImageFile(vector<Tile> tiles, vector<palletTile> palletTiles, bool debug);
+
+        static void generateMosaicJSONFile(vector<Tile> tiles, vector<palletTile> palletTiles, string palletFilePath);
 };
 
 #endif

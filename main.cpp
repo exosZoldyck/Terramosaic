@@ -1,9 +1,11 @@
 #include <iostream>
 #include <chrono>
+#include <filesystem>
 #include "lib/colors.h"
 #include "lib/mosaic.h"
 
 using namespace std;
+using namespace std::filesystem;
 
 #define debug false
 
@@ -12,14 +14,27 @@ uint64_t timeSinceEpochMillisec() {
     return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
 
+bool endsWith(const std::string& str, const std::string& suffix) {
+    if (str.length() < suffix.length()) {
+        return false;
+    }
+    return str.substr(str.length() - suffix.length()) == suffix;
+}
+
 int main(int argc, char *argv[]) {
-    string palletFilePath = "pallet.json";
-    
     string binaryPath = (string)argv[0];
     for (int i = 0; i < binaryPath.size(); i++) 
         if (binaryPath[i] == '\\') 
             binaryPath[i] = '/';
-    palletFilePath = binaryPath.substr(0, binaryPath.find_last_of("/") + 1) + palletFilePath;
+
+    string palletFilePath = "pallet.json";
+    for (int i = 0; i < argc; i++){
+        string arg(argv[i]);
+        if(endsWith(arg, ".json")) {
+            palletFilePath = absolute(relative(path(arg))).string();
+            break;
+        }
+    }
 
     cout << "Loading tile pallet from \"" << palletFilePath << "\"..." << endl;
     const vector<palletTile> palletTiles = Mosaic::fetchPalletTiles(palletFilePath);
@@ -57,8 +72,10 @@ int main(int argc, char *argv[]) {
 
     cout << "Generating mosaic image file..." << endl;
     uint64_t generationStartTime = timeSinceEpochMillisec();
-    Mosaic::generateMosaicImageFile(tiles, palletTiles, Mosaic::palletTilesDirPath, debug);
+    Mosaic::generateMosaicImageFile(tiles, palletTiles, debug);
     uint64_t generationEndTime = timeSinceEpochMillisec();
+
+    Mosaic::generateMosaicJSONFile(tiles, palletTiles, palletFilePath);
 
     cout << endl << "Done!" << endl;
 
