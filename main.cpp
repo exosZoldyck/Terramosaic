@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <filesystem>
+#include <vector>
 #include "lib/colors.h"
 #include "lib/mosaic.h"
 #include "lib/pallet.h"
