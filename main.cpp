@@ -25,21 +25,54 @@ bool endsWith(const std::string& str, const std::string& suffix) {
 }
 
 int main(int argc, char *argv[]) {
-    string binaryPath = (string)argv[0];
-    for (int i = 0; i < binaryPath.size(); i++) 
-        if (binaryPath[i] == '\\') 
-            binaryPath[i] = '/';
-
+    string inputImagePath = "";
     string palletFilePath = "pallet.json";
-    for (int i = 0; i < argc; i++){
-        string arg(argv[i]);
-        if(endsWith(arg, ".json")) {
-            palletFilePath = absolute(relative(path(arg))).string();
-            break;
+    bool silentMode = false;
+
+
+    
+    // Parse the input args
+    for (int i = 1; i < argc; i++){
+        string arg = (string)*(argv + i);
+        
+        string arg_next = (i + 1 >= argc) ? "" : (string)*(argv + (i + 1)); // Checks if next arg exists
+
+        if (arg == "--pallet-path" || arg == "-p" ){
+            if (arg_next == "") {
+                cout << "error: Undefined pallet file path!\n";
+                return 0;
+            }
+
+            if(endsWith(arg_next, ".json")) {
+                try{
+                    palletFilePath = absolute(relative(path(arg_next))).string();
+                } catch(exception){
+                    cout << "error: Missing pallet file or invalid path!\n";
+                    return 0;
+                }
+            } else {
+                cout << "error: File must be \".json\"!\n";
+                return 0;
+            }
+            
+            i++; // skip over next argument because it's a parameter
+        }
+        else if (arg == "--silent" || arg == "-s" ){ 
+            silentMode = true;
+        }
+        else if (inputImagePath == "") { // input image path
+            try{
+                inputImagePath = absolute(relative(path(arg))).string();
+            } catch(exception){
+                cout << "error: Missing input image file or invalid path!\n";
+                return 0;
+            }
         }
     }
 
-    cout << "Loading tile pallet from \"" << palletFilePath << "\"..." << endl;
+
+
+    cout << "Loading tile pallet from \"" << palletFilePath << "\"..." << "\n";
     Pallet pallet = Pallet();
     Pallet *pallet_ptr = &pallet;
     // This function sets the value of "pallet" internally using a pointer
@@ -47,7 +80,7 @@ int main(int argc, char *argv[]) {
     pallet_ptr = nullptr; 
     
     if (pallet.tiles.size() < 1) {
-        cout << "Error: Unable to read \""<< palletFilePath <<"\"" << endl;
+        cout << "Error: Unable to read \""<< palletFilePath <<"\"" << "\n";
         system("PAUSE");
         return 1;
     }
@@ -61,29 +94,34 @@ int main(int argc, char *argv[]) {
         }
     loadedTiles_String += "----------------------------------------------------\n\n";
     cout << loadedTiles_String;
-    cout << "Loaded tiles: " << pallet.tiles.size() << endl << endl; 
+    cout << "Loaded tiles: " << pallet.tiles.size() << "\n" << "\n"; 
 
-    cout << "Creating image CIELAB color array ..." << endl;
-    vector<CIELABColor> pixels_CIELAB = Mosaic::fetchImagePixelCIELABColors(argc, argv);
+    cout << "Creating image CIELAB color array ..." << "\n";
+    vector<CIELABColor> pixels_CIELAB = Mosaic::fetchImagePixelCIELABColors(inputImagePath);
     if (pixels_CIELAB.size() < 1) return 1;
-    cout << "Image resolution: " << Mosaic::imageWidth << "x" << Mosaic::imageHeight << " (" << pixels_CIELAB.size() << "px)" << endl << endl;
+    cout << "Image resolution: " << Mosaic::imageWidth << "x" << Mosaic::imageHeight << " (" << pixels_CIELAB.size() << "px)" << "\n" << "\n";
 
-    cout << "Calculating closest pixel/tile color matches..." << endl;
+    cout << "Calculating closest pixel/tile color matches..." << "\n";
     uint64_t matchStartTime = timeSinceEpochMillisec();
-    vector<Tile> tiles = Mosaic::matchPixelsAndPalletTiles(pixels_CIELAB, pallet.tiles, debug);
+    vector<Tile> tiles = Mosaic::matchPixelsAndPalletTiles(pixels_CIELAB, pallet.tiles, silentMode);
     uint64_t matchEndTime = timeSinceEpochMillisec();
 
     if (debug) for(int i = 0; i < tiles.size(); i++){
-        cout << tiles[i].pixelId << "\t" << tiles[i].palletId << "\t" << tiles[i].closestDeltaE << endl;
+        cout << tiles[i].pixelId << "\t" << tiles[i].palletId << "\t" << tiles[i].closestDeltaE << "\n";
     }
 
-    cout << "Generating mosaic image file..." << endl;
+    cout << "Generating mosaic image file..." << "\n";
     uint64_t generationStartTime = timeSinceEpochMillisec();
     try{
-        Mosaic::generateMosaicImageFile(tiles, pallet, debug);
+        bool result = Mosaic::generateMosaicImageFile(tiles, pallet, silentMode);
+        
+        // If functions return "true" throw error
+        if (result) {
+            cout << "error: Unable to write image file" << "\n";
+            return 1;
+        }
     } catch (exception) {
-        cout << "Error: Unable to write image file" << endl;
-        system("PAUSE");
+        cout << "error: Unable to write image file" << "\n";
         return 1;
     }
     uint64_t generationEndTime = timeSinceEpochMillisec();
@@ -91,21 +129,23 @@ int main(int argc, char *argv[]) {
     try{
         Mosaic::generateMosaicJSONFile(tiles, pallet, palletFilePath, matchEndTime - matchStartTime, generationEndTime - generationStartTime);
     } catch (exception) {
-        cout << "Warning: Unable to write JSON file" << endl;
+        cout << "Warning: Unable to write JSON file" << "\n";
         system("PAUSE");
     }
 
-    cout << endl << "Done!" << endl;
 
-    cout << endl << "Pixels processed: " << pixels_CIELAB.size()
-        << endl << "Match calculations: " << pixels_CIELAB.size() * pallet.tiles.size()
-        << endl << "Match calculation time: " 
-        << (double)(matchEndTime - matchStartTime) / (double)1000 << " s" << endl
-        << endl << "Mosaic generation time: " 
-        << (double)(generationEndTime - generationStartTime) / (double)1000 << " s" << endl 
-        << endl << "Total time elapsed: " 
+    
+    cout << "\n" << "Done!" << "\n";
+
+    cout << "\n" << "Pixels processed: " << pixels_CIELAB.size()
+        << "\n" << "Match calculations: " << pixels_CIELAB.size() * pallet.tiles.size()
+        << "\n" << "Match calculation time: " 
+        << (double)(matchEndTime - matchStartTime) / (double)1000 << " s" << "\n"
+        << "\n" << "Mosaic generation time: " 
+        << (double)(generationEndTime - generationStartTime) / (double)1000 << " s" << "\n" 
+        << "\n" << "Total time elapsed: " 
         << (double)((matchEndTime - matchStartTime) + (generationEndTime - generationStartTime)) / (double)1000 
-        << " s"  << endl << endl;
+        << " s"  << "\n" << "\n";
 
     // Pause before exiting
     uint64_t execFinishTime = timeSinceEpochMillisec();

@@ -22,11 +22,11 @@ class Mosaic{
 
         static vector<RGBColor> fetchImagePixelRGBColors(string filePath_String, bool setImageResVars, unsigned int *minResolution);
 
-        static vector<CIELABColor> fetchImagePixelCIELABColors(int argc, char *argv[]);
+        static vector<CIELABColor> fetchImagePixelCIELABColors(string filePath_String);
         
-        static vector<Tile> matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const vector<palletTile> palletTiles, bool debug);
+        static vector<Tile> matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const vector<palletTile> palletTiles, bool silentMode);
 
-        static void generateMosaicImageFile(vector<Tile> tiles, Pallet pallet, bool debug);
+        static bool generateMosaicImageFile(vector<Tile> tiles, Pallet pallet, bool silentMode);
 
         static void generateMosaicJSONFile(vector<Tile> tiles, Pallet pallet, string palletFilePath, uint64_t calculationTime, uint64_t generationTime);
 };

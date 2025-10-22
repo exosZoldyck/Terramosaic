@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
 	vector<string> filePath_List;
 	string jsonText = "{\"dirPath\": ";
 	if (argc <= 1){
-		std::cout << "Error: No arg provided" << endl;
+		std::cout << "Error: No arg provided" << "\n";
 		system("PAUSE");
 		return 1;
 	}
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 		}
 	} 
 	else{
-		std::cout << "Error: Provided arg must be directory path" << endl;
+		std::cout << "Error: Provided arg must be directory path" << "\n";
 		system("PAUSE");
 		return 1;
 	}
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 		if (global_i + 1 < filePath_List.size()) tilesJSONString += ", ";
 
 		std::cout << "Added \"" << name << "\" with " << "lab(" 
-			<< avrgCIELABColor.toString() << ")" << endl;
+			<< avrgCIELABColor.toString() << ")" << "\n";
 
 		global_i++;
 	} while (global_i < filePath_List.size());

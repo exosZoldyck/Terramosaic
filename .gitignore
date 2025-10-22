@@ -3,8 +3,10 @@
 *.bmp
 *.exe
 *.ini
+*.json
 pallet.json
 
 /tiles
 /tiles_all
 /build
+/viewer

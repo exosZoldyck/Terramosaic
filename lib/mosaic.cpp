@@ -18,14 +18,29 @@ vector<RGBColor> Mosaic::fetchImagePixelRGBColors(string filePath_String, bool s
     
     // Parse the input string and turn it into a const char array because 
 	// stb_image library needs that datatype as the input file path 
-    string filePath_abs = canonical(path(filePath_String)).string();
-    const char *filePath = filePath_abs.c_str();
+    string filePath_abs;
+    const char *filePath;
+    try{
+        filePath_abs = canonical(path(filePath_String)).string();
+        filePath = filePath_abs.c_str();
+    } catch(exception){
+        cout << "error: Couldn't find image file at path \"" << filePath_String << "\"\n";
+        vector<RGBColor> empty;
+        return empty;
+    }
 
     // Read image file data 
-    uint8_t *imageData = stbi_load(filePath, &width, &height, &channels, 0);
+    uint8_t *imageData;
+    try{
+        imageData = stbi_load(filePath, &width, &height, &channels, 0);
+    } catch(exception){
+        std::cout << "error: Couldn't fetch image data for \"" << filePath_abs << "\"\n";
+        vector<RGBColor> empty;
+        return empty;
+    }
 
     if (imageData == NULL){
-        std::cout << "Error: Unable to load file \"" << filePath << "\"" << endl;
+        std::cout << "error: Couldn't fetch image data for \"" << filePath_abs << "\"\n";
         stbi_image_free(imageData);
         vector<RGBColor> nullColor;
         return nullColor;
@@ -90,13 +105,9 @@ vector<RGBColor> Mosaic::fetchImagePixelRGBColors(string filePath_String, bool s
     return pixels_RGB;
 } 
 
-vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(int argc, char *argv[]){
-    string filePath_String = "input.png";
-
-    // Parse the input strings from argv if args are defined
-    // and turn them into into a const char array because 
-    // stb_image library needs that datatype as the input file path 
-    if (argc > 1) filePath_String = argv[1];
+vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(string filePath_String = "input.png"){
+    // Fetch the RGB colors vector so it can be 
+    // converted to and returned as a CIELAB colors vector
 
     vector<RGBColor> pixels_RGB = fetchImagePixelRGBColors(filePath_String, true);
 
@@ -110,7 +121,7 @@ vector<CIELABColor> Mosaic::fetchImagePixelCIELABColors(int argc, char *argv[]){
     return pixels_CIELAB;
 }
 
-vector<Tile> Mosaic::matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const vector<palletTile> palletTiles, bool debug = false){
+vector<Tile> Mosaic::matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const vector<palletTile> palletTiles, bool silentMode = false){
     vector<Tile> tiles;
     tiles.resize(pixels.size());
 
@@ -139,9 +150,9 @@ vector<Tile> Mosaic::matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const
             };
         }
 
-        if (debug) cout << "Progress: "
+        if (!silentMode) cout << "Progress: "
             << (int)((float)((j+1) * palletTiles.size()) / (float)(palletTiles.size() * pixels.size()) * 100) << "%"
-            << "\t" << (j+1) * palletTiles.size() << "/" << (palletTiles.size() * pixels.size()) << endl;
+            << " (" << (j+1) * palletTiles.size() << " / " << (palletTiles.size() * pixels.size()) << ") pixel/tile matches calculated\n";
 
         tiles[j] = tile;
     }
@@ -149,7 +160,7 @@ vector<Tile> Mosaic::matchPixelsAndPalletTiles(vector<CIELABColor> pixels, const
     return tiles;
 }
 
-void Mosaic::generateMosaicImageFile(vector<Tile> tiles, Pallet pallet, bool debug = false){
+bool Mosaic::generateMosaicImageFile(vector<Tile> tiles, Pallet pallet, bool silentMode = false){
     const unsigned int channels = 4;
     const unsigned int palletTileWidth = pallet.minResolution;
     const unsigned int palletTileHeight = pallet.minResolution;
@@ -192,7 +203,10 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, Pallet pallet, bool deb
             else{
                 string tileImgFilePath = pallet.palletTilesDirPath + pallet.tiles[tile.palletId].name + pallet.tiles[tile.palletId].fileType;
                 tilePixels_RGB = fetchImagePixelRGBColors(tileImgFilePath);
-                if (tilePixels_RGB.size() < 1) return;
+                if (tilePixels_RGB.size() < 1) {
+                    cout << "error: Unable to load pallet image file";
+                    return 1;
+                }
 
                 loadedPalletTiles.insert({tile.palletId, tilePixels_RGB}); 
             }
@@ -212,19 +226,24 @@ void Mosaic::generateMosaicImageFile(vector<Tile> tiles, Pallet pallet, bool deb
                     imageData[pixelIndex + 3] = (uint8_t)tilePixels_RGB[x + (y * palletTileWidth)].a;
                 }
             }
+
+            if (!silentMode) cout << "Progress: "
+                << (int)(((float)(tileIndex + 1) / (float)(imageWidth * imageHeight)) * 100) << "% ("
+                << tileIndex + 1 << " / " << imageWidth * imageHeight << ") tiles generated\n"; 
         }
     }
 
     // Free the memory because the pallet tiles aren't used after this point
     loadedPalletTiles.clear();
 
+    cout << "\nWriting image data to file...\n";
     stbi_write_png((imageName + "_mosaic.png").c_str(), width, height, channels, imageData, width * channels);
     
     // Free the image data pointer to avoid memory leak
     delete [] imageData;
     imageData = nullptr;
 
-    return;
+    return 0;
 } 
 
 void Mosaic::generateMosaicJSONFile(vector<Tile> tiles, Pallet pallet, string palletFilePath, uint64_t calculationTime, uint64_t generationTime){
