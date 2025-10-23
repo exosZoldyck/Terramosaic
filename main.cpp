@@ -37,36 +37,43 @@ int main(int argc, char *argv[]) {
         
         string arg_next = (i + 1 >= argc) ? "" : (string)*(argv + (i + 1)); // Checks if next arg exists
 
-        if (arg == "--pallet-path" || arg == "-p" ){
-            if (arg_next == "") {
-                cout << "error: Undefined pallet file path!\n";
-                return 0;
-            }
-
-            if(endsWith(arg_next, ".json")) {
-                try{
-                    palletFilePath = absolute(relative(path(arg_next))).string();
-                } catch(exception){
-                    cout << "error: Missing pallet file or invalid path!\n";
+        switch (arg){
+            case "--pallet-path":
+            case "-p":
+                if (arg_next == "") {
+                    cout << "error: Undefined pallet file path!\n";
                     return 0;
                 }
-            } else {
-                cout << "error: File must be \".json\"!\n";
-                return 0;
-            }
-            
-            i++; // skip over next argument because it's a parameter
-        }
-        else if (arg == "--silent" || arg == "-s" ){ 
-            silentMode = true;
-        }
-        else if (inputImagePath == "") { // input image path
-            try{
-                inputImagePath = absolute(relative(path(arg))).string();
-            } catch(exception){
-                cout << "error: Missing input image file or invalid path!\n";
-                return 0;
-            }
+
+                if(endsWith(arg_next, ".json")) {
+                    try{
+                        palletFilePath = absolute(relative(path(arg_next))).string();
+                    } catch(exception){
+                        cout << "error: Missing pallet file or invalid path!\n";
+                        return 0;
+                    }
+                } else {
+                    cout << "error: File must be \".json\"!\n";
+                    return 0;
+                }
+                
+                i++; // skip over next argument because it's a parameter
+                break;
+
+            case "--silent":
+            case "-s":
+                silentMode = true;
+                break;
+
+            default:
+                if (inputImagePath == "") { // input image path
+                    try{
+                        inputImagePath = absolute(relative(path(arg))).string();
+                    } catch(exception){
+                        cout << "error: Missing input image file or invalid path!\n";
+                        return 0;
+                    }
+                }
         }
     }
 
@@ -80,7 +87,7 @@ int main(int argc, char *argv[]) {
     pallet_ptr = nullptr; 
     
     if (pallet.tiles.size() < 1) {
-        cout << "Error: Unable to read \""<< palletFilePath <<"\"" << "\n";
+        cout << "error: Unable to read \""<< palletFilePath <<"\"" << "\n";
         system("PAUSE");
         return 1;
     }
