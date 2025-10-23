@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
                     return 0;
                 }
                 
-                i++; // skip over next argument because it's a parameter
+                i++; // skip over next argument because it's a parameter 
                 break;
 
             case "--silent":
